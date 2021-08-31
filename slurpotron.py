@@ -17,7 +17,9 @@ from discord.ext import commands
 import discord
 
 # Setup
-bot = commands.Bot(command_prefix="!!")
+intents = discord.Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix="!!", intents=intents)
 bot.remove_command('help')
 
 
@@ -127,6 +129,11 @@ async def crawl_channel(channel, start, end):
         if message.author.bot:
             continue
 
+        # Make sure the user is still in the server
+        if message.guild.get_member(message.author.id) is None:
+            print(f"\t\t\tSKIPPING user {message.author.display_name}")
+            continue
+
         user = message.author.display_name
         post_counts = stats[user]
 
@@ -166,8 +173,8 @@ async def print_statistics(ctx, statistics, start_date, end_date):
     start_date = start_date.strftime(date_format)
     end_date = end_date.strftime(date_format)
 
-    output = f"**Calculated RP XP**\n**Start date:** {start_date}\n**End date:** {end_date}\n\n"
-    output += formatted_statistics
+    output = f"**Calculated RP XP**\n**Start date:** {start_date}\n**End date:** {end_date}```"
+    output += formatted_statistics + "\n```"
 
     await ctx.reply(output)
 
