@@ -104,7 +104,7 @@ def save_configuration():
 
 def in_allowed_category(channel):
     """Determines whether a channel is part of an allowed category."""
-    if "masquerade-ball" in channel.name: # Kludge
+    if "jade" in channel.name: # Kludge
         return True
 
     if channel.category is None:
