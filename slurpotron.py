@@ -104,7 +104,7 @@ def save_configuration():
 
 def in_allowed_category(channel):
     """Determines whether a channel is part of an allowed category."""
-    if "jade" in channel.name: # Kludge
+    if "camarilla-execution" in channel.name or "center-stage" in channel.name: # Kludge
         return True
 
     if channel.category is None:
@@ -297,6 +297,17 @@ async def help(ctx):
 ```
     """
     await ctx.reply(instructions)
+
+
+@bot.event
+async def on_ready():
+    """Set the presence."""
+    await bot.change_presence(
+        activity=discord.Activity(
+            type=discord.ActivityType.watching,
+            name="everything you do"
+        )
+    )
 
 
 # Error handling
