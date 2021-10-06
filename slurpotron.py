@@ -104,7 +104,7 @@ def save_configuration():
 
 def in_allowed_category(channel):
     """Determines whether a channel is part of an allowed category."""
-    if "coord" in channel.name: # Kludge; exclude all coordination channels
+    if "coord" in channel.name or "rolls" in channel.name: # Kludge; exclude bad channels
         return False
 
     if channel.category is None:
