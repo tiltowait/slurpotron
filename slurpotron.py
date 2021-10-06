@@ -104,8 +104,8 @@ def save_configuration():
 
 def in_allowed_category(channel):
     """Determines whether a channel is part of an allowed category."""
-    if "camarilla-execution" in channel.name or "center-stage" in channel.name: # Kludge
-        return True
+    if "coord" in channel.name: # Kludge; exclude all coordination channels
+        return False
 
     if channel.category is None:
         return False
