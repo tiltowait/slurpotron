@@ -350,7 +350,7 @@ async def on_ready():
 
 
 # Error handling
-#@bot.event
+@bot.event
 async def on_command_error(ctx, error):
     """Print the help message."""
     print(error)
