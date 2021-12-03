@@ -9,6 +9,7 @@ present a calculated list of character XP.
 import math
 import json
 import os
+import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional
@@ -46,6 +47,30 @@ def set_threshold(new_value):
     """Set the posts-per-day threshold."""
     CONFIGURATION["post_threshold"] = new_value
     save_configuration()
+
+
+def get_name(msg):
+    """Get a character's name from a message body."""
+    if msg.channel.category is not None and "correspondence" in msg.channel.category.name.lower():
+        return "Correspondence"
+
+    message = msg.content.strip()
+    if len(message) == 0 or message[0] == "\"" or message in ["-start", "-end"] or re.match(r"\**\w+", message):
+        return None
+
+    fence_languages = ["css", "yaml", "http", "arm", "excel", "fix", "ini", "ml", "md"]
+    for language in fence_languages:
+        message = re.sub(r"```" + language, "", message, re.IGNORECASE)
+
+    message = message.strip()
+    match = re.search(r"([A-Za-z ]+)", message)#, re.MULTILINE)
+
+    if match is not None:
+        name = match.group(0).strip()
+        if len(name) == 0 or len(name.split()) > 4:
+            return None
+        return name
+    return "Unknown"
 
 
 def get_excluded_channels():
@@ -125,7 +150,7 @@ def in_allowed_category(channel):
 
 async def crawl_channel(channel, start, end):
     """Return a dictionary of posts per user in a given channel."""
-    stats = defaultdict(lambda: defaultdict(lambda: 0))
+    stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 
     async for message in channel.history(limit=None, after=start, before=end):
         # Skip bots
@@ -137,13 +162,16 @@ async def crawl_channel(channel, start, end):
             print(f"\t\t\tSKIPPING user {message.author.display_name}")
             continue
 
-        user = message.author.display_name
-        post_counts = stats[user]
+        user = message.author.name
+        char_name = get_name(message)
+        if char_name is None:
+            continue
+        post_counts = stats[user][char_name]
 
         date = message.created_at.date()
         post_counts[date] += 1
 
-        stats[user] = post_counts
+        stats[user][char_name] = post_counts
 
     return stats
 
@@ -153,13 +181,15 @@ async def calculate_xp(statistics):
     threshold = get_threshold()
     xp_allotment = {}
 
-    for user, post_counts in statistics.items():
-        xp = sum(map(lambda n: n >= threshold, post_counts.values()))
-        xp = math.ceil(xp / 2)
-        max_rp_xp = get_max_xp()
-        if xp > max_rp_xp:
-            xp = max_rp_xp # Max allowable RP XP
-        xp_allotment[user] = xp
+    for user, character in statistics.items():
+        xp_allotment[user] = {}
+        for character, post_counts in character.items():
+            xp = sum(map(lambda n: n >= threshold, post_counts.values()))
+            xp = math.ceil(xp / 2)
+            max_rp_xp = get_max_xp()
+            if xp > max_rp_xp:
+                xp = max_rp_xp # Max allowable RP XP
+            xp_allotment[user][character] = xp
 
     return xp_allotment
 
@@ -167,10 +197,18 @@ async def calculate_xp(statistics):
 async def print_statistics(ctx, statistics, start_date, end_date):
     """Prints a nicely formatted statistics string."""
     xp = await calculate_xp(statistics)
-    pairs = list(map(lambda user: f"{user[0]}: {user[1]}", xp.items()))
-    pairs.sort()
+    entries = []
+    for user, chars in xp.items():
+        entry = user + ": "
+        characters = []
+        for character, experience in chars.items():
+            characters.append(f"{character} ({experience})")
+        entry += " | ".join(characters)
+        entries.append(entry)
 
-    formatted_statistics = "\n".join(pairs)
+    entries.sort()
+
+    formatted_statistics = "\n".join(entries)
 
     date_format = "%A, %b %d, %Y"
     start_date = start_date.strftime(date_format)
@@ -214,16 +252,17 @@ async def crawl(ctx, start_date, end_date = None):
 
     working = await ctx.reply("Working ...")
 
-    all_stats = defaultdict(lambda: defaultdict(lambda: 0))
+    all_stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     crawled = 0
     for channel in ctx.guild.channels:
         if isinstance(channel, discord.TextChannel) and in_allowed_category(channel):
             channel_stats = await crawl_channel(channel, start_date, end_date)
             crawled += 1
             print(f"Crawled {crawled} channels ({channel.name})")
-            for user, post_counts in channel_stats.items():
-                for day, count in post_counts.items():
-                    all_stats[user][day] += count
+            for user, character in channel_stats.items():
+                for character, post_counts in character.items():
+                    for day, count in post_counts.items():
+                        all_stats[user][character][day] += count
 
             # Update the user on progress
             if crawled % 10 == 0:
@@ -311,9 +350,10 @@ async def on_ready():
 
 
 # Error handling
-@bot.event
+#@bot.event
 async def on_command_error(ctx, error):
     """Print the help message."""
+    print(error)
     if not isinstance(error, commands.CommandNotFound):
         await help(ctx)
 
