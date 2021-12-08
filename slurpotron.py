@@ -165,7 +165,7 @@ async def crawl_channel(channel, start, end):
         user = message.author.name
         char_name = get_name(message)
         if char_name is None:
-            continue
+            char_name = "Unknown"
         post_counts = stats[user][char_name]
 
         date = message.created_at.date()
