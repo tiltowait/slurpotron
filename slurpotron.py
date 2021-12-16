@@ -202,6 +202,8 @@ async def print_statistics(ctx, statistics, start_date, end_date):
         entry = user + ": "
         characters = []
         for character, experience in chars.items():
+            if character == "Unknown":
+                continue
             characters.append(f"{character} ({experience})")
         entry += " | ".join(characters)
         entries.append(entry)
