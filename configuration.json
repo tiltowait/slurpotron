@@ -1,6 +1,6 @@
 {
     "post_threshold": 1,
-    "excluded_channels":
+    "included_categories":
     [
         "autarkis",
         "anarch",

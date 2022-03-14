@@ -73,9 +73,9 @@ def get_name(msg):
     return "Unknown"
 
 
-def get_excluded_channels():
+def get_included_categories():
     """Return the list of excluded channels."""
-    return CONFIGURATION["excluded_channels"]
+    return CONFIGURATION["included_categories"]
 
 
 def exclude_channels(*channels):
@@ -83,9 +83,9 @@ def exclude_channels(*channels):
     # Lowercase the categories first
     channels = list(map(lambda category: category.lower(), channels))
 
-    current_exclusion_list = CONFIGURATION["excluded_channels"]
+    current_exclusion_list = CONFIGURATION["included_categories"]
     current_exclusion_list.extend(channels)
-    CONFIGURATION["excluded_channels"] = current_exclusion_list
+    CONFIGURATION["included_categories"] = current_exclusion_list
 
     print(CONFIGURATION)
 
@@ -111,7 +111,7 @@ def load_configuration():
         json_str = """
         {
             "post_threshold": 1,
-            "excluded_channels": [],
+            "included_categories": [],
             "max_xp": 3
         }
         """
@@ -135,7 +135,7 @@ def in_allowed_category(channel):
     if channel.category is None:
         return False
 
-    allowed_categories = CONFIGURATION["excluded_channels"]
+    allowed_categories = CONFIGURATION["included_categories"]
 
     category = channel.category.name.lower()
     if "[" in category or "【" in category:
@@ -299,7 +299,7 @@ async def include(ctx, *channels: str):
 @user_is_staff()
 async def included(ctx):
     """Print the list of excluded channels."""
-    channels = "\n".join(get_excluded_channels())
+    channels = "\n".join(get_included_categories())
 
     await ctx.reply(f"**Including these category patterns in the XP crawl:**\n\n{channels}")
 
