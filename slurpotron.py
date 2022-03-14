@@ -218,7 +218,7 @@ async def print_statistics(ctx, statistics, start_date, end_date):
     start_date = start_date.strftime(date_format)
     end_date = end_date.strftime(date_format)
 
-    output = f"__**Calculated RP XP**\n**Start date:** {start_date}\n**End date:** {end_date}__"
+    output = f"**Calculated RP XP**\n**Start date:** {start_date}\n**End date:** {end_date}"
     pages = paginator.pages
     output += pages.pop(0)
 
