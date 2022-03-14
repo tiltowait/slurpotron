@@ -210,16 +210,22 @@ async def print_statistics(ctx, statistics, start_date, end_date):
 
     entries.sort()
 
-    formatted_statistics = "\n".join(entries)
+    paginator = commands.Paginator(max_size=1800)
+    for entry in entries:
+        paginator.add_line(entry)
 
     date_format = "%A, %b %d, %Y"
     start_date = start_date.strftime(date_format)
     end_date = end_date.strftime(date_format)
 
-    output = f"**Calculated RP XP**\n**Start date:** {start_date}\n**End date:** {end_date}```"
-    output += formatted_statistics + "\n```"
+    output = f"__**Calculated RP XP**\n**Start date:** {start_date}\n**End date:** {end_date}__"
+    pages = paginator.pages
+    output += pages.pop(0)
 
     await ctx.reply(output)
+
+    for page in pages:
+        await ctx.reply(page)
 
 
 # COMMANDS
