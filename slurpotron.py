@@ -252,8 +252,8 @@ async def crawl(ctx, start_date, end_date = None):
             end_date = datetime.strptime(end_date, date_format)
 
         # Set the cutoff to 1800 UTC, which is when sunrise/sundown happens
-        start_date += timedelta(hours=18)
-        end_date += timedelta(hours=18)
+        start_date += timedelta(hours=19)
+        end_date += timedelta(hours=19)
     except ValueError:
         await help(ctx)
         return
