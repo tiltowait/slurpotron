@@ -6,22 +6,24 @@ users over a given timeframe. It can then issue a detailed activity report or
 present a calculated list of character XP.
 """
 
-import math
 import json
+import math
 import os
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional
 
-from discord.ext import commands
 import discord
+from dateutil import parser
+from discord.ext import commands
 
 # Setup
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 bot = commands.Bot(command_prefix="!!", intents=intents)
-bot.remove_command('help')
+bot.remove_command("help")
 
 
 # Configuration and persistence
@@ -32,9 +34,11 @@ CONFIGURATION = {}
 # HELPER FUNCTIONS
 def user_is_staff():
     """Returns true if the user has the Staff role."""
+
     def predicate(ctx):
         roles = map(lambda role: role.name, ctx.author.roles)
         return "Staff" in roles
+
     return commands.check(predicate)
 
 
@@ -55,7 +59,12 @@ def get_name(msg):
         return "Correspondence"
 
     message = msg.content.strip()
-    if len(message) == 0 or message[0] == "\"" or message in ["-start", "-end"] or re.match(r"\**\w+", message):
+    if (
+        len(message) == 0
+        or message[0] == '"'
+        or message in ["-start", "-end"]
+        or re.match(r"\**\w+", message)
+    ):
         return None
 
     fence_languages = ["css", "yaml", "http", "arm", "excel", "fix", "ini", "ml", "md"]
@@ -63,13 +72,13 @@ def get_name(msg):
         message = re.sub(r"```" + language, "", message, re.IGNORECASE)
 
     message = message.strip()
-    match = re.search(r"([A-Za-z ]+)", message)#, re.MULTILINE)
+    match = re.search(r"([A-Za-z ]+)", message)  # , re.MULTILINE)
 
     if match is not None:
         name = match.group(0).strip()
         if len(name) == 0 or len(name.split()) > 4:
             return None
-        return name
+        return " ".join(name.split())
     return "Unknown"
 
 
@@ -129,7 +138,7 @@ def save_configuration():
 
 def in_allowed_category(channel):
     """Determines whether a channel is part of an allowed category."""
-    if "coord" in channel.name or "rolls" in channel.name: # Kludge; exclude bad channels
+    if "coord" in channel.name or "rolls" in channel.name:  # Kludge; exclude bad channels
         return False
 
     if channel.category is None:
@@ -188,7 +197,7 @@ async def calculate_xp(statistics):
             xp = math.ceil(xp / 2)
             max_rp_xp = get_max_xp()
             if xp > max_rp_xp:
-                xp = max_rp_xp # Max allowable RP XP
+                xp = max_rp_xp  # Max allowable RP XP
             xp_allotment[user][character] = xp
 
     return xp_allotment
@@ -230,9 +239,10 @@ async def print_statistics(ctx, statistics, start_date, end_date):
 
 # COMMANDS
 
+
 @bot.command()
 @user_is_staff()
-async def crawl(ctx, start_date, end_date = None):
+async def crawl(ctx, start_date, end_date=None):
     """
     Crawl through the non-excluded channels, pulling messages between the start
     and end dates. If no end date is specified, today's date is used.
@@ -244,17 +254,14 @@ async def crawl(ctx, start_date, end_date = None):
     date_format = r"%Y%m%d"
 
     try:
-        start_date = datetime.strptime(start_date, date_format)
+        start_date = parser.parse(f"{start_date} 19:00 UTC")
 
         if end_date is None:
-            end_date = datetime.now()
+            end_date = parser.parse(f"20500101 19:00 UTC")
         else:
-            end_date = datetime.strptime(end_date, date_format)
+            end_date = parser.parse(f"{end_date} 19:00 UTC")
 
-        # Set the cutoff to 1800 UTC, which is when sunrise/sundown happens
-        start_date += timedelta(hours=19)
-        end_date += timedelta(hours=19)
-    except ValueError:
+    except:
         await help(ctx)
         return
 
@@ -285,6 +292,7 @@ async def crawl(ctx, start_date, end_date = None):
 
 
 # Configuration commands
+
 
 @bot.command()
 @user_is_staff()
@@ -350,10 +358,7 @@ async def help(ctx):
 async def on_ready():
     """Set the presence."""
     await bot.change_presence(
-        activity=discord.Activity(
-            type=discord.ActivityType.watching,
-            name="everything you do"
-        )
+        activity=discord.Activity(type=discord.ActivityType.watching, name="everything you do")
     )
 
 
