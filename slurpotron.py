@@ -138,7 +138,13 @@ def save_configuration():
 
 def in_allowed_category(channel):
     """Determines whether a channel is part of an allowed category."""
-    if "coord" in channel.name or "rolls" in channel.name:  # Kludge; exclude bad channels
+    if (
+        "coord" in channel.name
+        or "rolls" in channel.name
+        or "ooc" in channel.name
+        or "images" in channel.name
+    ):
+        # Kludge: exclude non-RP channels
         return False
 
     if channel.category is None:
